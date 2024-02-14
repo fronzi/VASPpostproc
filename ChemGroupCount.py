@@ -7,6 +7,7 @@ class Atom:
         self.position = np.array(position)
         self.index = index
 
+
 def read_structure(file_name):
     atoms = []
     with open(file_name, 'r') as file:
@@ -57,59 +58,52 @@ def main():
     oh_cutoff = args.oh_cutoff
     ch_cutoff = args.ch_cutoff
 
-
-
-
     water_molecules = []
     hydroxyl_groups = []
     isolated_atoms = []
     ch_groups = []
     ch2_groups = []
     ch3_groups = []
+    ch4_groups = []  # Initialize the ch4_groups list
     isolated_carbons = []
 
     atom_in_group = set()
 
     for atom in atoms:
         if atom.symbol == 'C' and atom.index not in atom_in_group:
-            hydrogen_neighbors = [a for a in find_neighbors(atom, atoms, 1.2, cell) if a.symbol == 'H']
+            hydrogen_neighbors = [a for a in find_neighbors(atom, atoms, ch_cutoff, cell) if a.symbol == 'H']
             num_hydrogens = len(hydrogen_neighbors)
 
             if num_hydrogens == 1:
                 ch_groups.append((atom, hydrogen_neighbors))
-                atom_in_group.add(atom.index)
-                atom_in_group.update([h.index for h in hydrogen_neighbors])
             elif num_hydrogens == 2:
                 ch2_groups.append((atom, hydrogen_neighbors))
-                atom_in_group.add(atom.index)
-                atom_in_group.update([h.index for h in hydrogen_neighbors])
             elif num_hydrogens == 3:
                 ch3_groups.append((atom, hydrogen_neighbors))
-                atom_in_group.add(atom.index)
-                atom_in_group.update([h.index for h in hydrogen_neighbors])
             elif num_hydrogens == 4:
-                ch4_groups.append((atom, hydrogen_neighbors))   
+                ch4_groups.append((atom, hydrogen_neighbors))
             else:
                 isolated_carbons.append(atom)
 
+            atom_in_group.add(atom.index)
+            atom_in_group.update([h.index for h in hydrogen_neighbors])
+
     for atom in atoms:
         if atom.symbol == 'O':
-            neighbors = find_neighbors(atom, atoms, cutoff_H_O, cell)
+            neighbors = find_neighbors(atom, atoms, oh_cutoff, cell)
             hydrogen_neighbors = [a for a in neighbors if a.symbol == 'H']
             
             if len(hydrogen_neighbors) == 2:
                 water_molecules.append((atom, hydrogen_neighbors))
-                atom_in_group.add(atom.index)
-                atom_in_group.update([h.index for h in hydrogen_neighbors])
             elif len(hydrogen_neighbors) == 1:
                 hydroxyl_groups.append((atom, hydrogen_neighbors))
-                atom_in_group.add(atom.index)
-                atom_in_group.update([h.index for h in hydrogen_neighbors])
+
+            atom_in_group.add(atom.index)
+            atom_in_group.update([h.index for h in hydrogen_neighbors])
 
     for atom in atoms:
         if atom.index not in atom_in_group:
             isolated_atoms.append(atom)
-
 
     print(f"Number of CH groups: {len(ch_groups)}")
     for i, group in enumerate(ch_groups):
@@ -157,4 +151,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
